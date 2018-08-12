@@ -51,7 +51,7 @@ func Redirector(resolver Resolver) http.HandlerFunc {
 
 // DatabaseResolver takes a database and returns a Resolver that
 // looks up the key in the provided database returning the value
-// returned from db.Get(key) or an empty string if an error occured.
+// returned from db.Get(key) or an empty string if an error occurred.
 func DatabaseResolver(db ShortlinkDB) Resolver {
 	var resolver ResolverFunc
 	resolver = func(key string) string {
