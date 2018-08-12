@@ -7,6 +7,16 @@ import (
 	"net/http"
 )
 
+type Resolver interface {
+	Resolve(key string) string
+}
+
+type ResolverFunc func(key string) string
+
+func (rf ResolverFunc) Resolve(key string) string {
+	return rf(key)
+}
+
 func Redirector() http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
 		fmt.Fprintf(w, "Hello, World\n")

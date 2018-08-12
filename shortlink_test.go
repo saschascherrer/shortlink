@@ -13,6 +13,15 @@ func TestBanner(t *testing.T) {
 	banner()
 }
 
+func TestResolverFunc(t *testing.T) {
+	var rf ResolverFunc
+	rf = func(key string) string {
+		return "value"
+	}
+	val := rf.Resolve("key")
+	assert.Equal(t, "value", val)
+}
+
 func TestRedirector(t *testing.T) {
 	ts := httptest.NewServer(Redirector())
 	defer ts.Close()
