@@ -8,16 +8,25 @@ import (
 	"strings"
 )
 
+// Resolver is the interface for all Resolver
 type Resolver interface {
 	Resolve(key string) string
 }
 
+// ResolverFunc makes it possible to pass a function as Resolver
 type ResolverFunc func(key string) string
 
+// Resolve makes the ResolverFunc compatible to the Resolver interface.
+// It executes the ResolverFunc when Resolve is called on a ResolverFunc.
 func (rf ResolverFunc) Resolve(key string) string {
 	return rf(key)
 }
 
+// Redirector extracts the short-URL (key) from the URL Path and
+// uses the provided Resolver to determine the corresponding long URL
+// (target) and does an HTTP Redirect (Temporary Redirect) to that target.
+// If the lookup through the resolver fails (i.e. result is the empty string),
+// it returns an HTTP 404 Not found.
 func Redirector(resolver Resolver) http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
 		var target string
@@ -40,6 +49,9 @@ func Redirector(resolver Resolver) http.HandlerFunc {
 	}
 }
 
+// DatabaseResolver takes a database and returns a Resolver that
+// looks up the key in the provided database returning the value
+// returned from db.Get(key) or an empty string if an error occurred.
 func DatabaseResolver(db ShortlinkDB) Resolver {
 	var resolver ResolverFunc
 	resolver = func(key string) string {
@@ -60,6 +72,7 @@ func banner() {
 		"+---------------------------------------------------------+")
 }
 
+// flags defines and parses the flags, returning their values
 func flags() (string, string) {
 	var socket, dbfile string
 	flag.StringVar(&socket, "socket", ":4242", "The socket to listen on")
@@ -68,11 +81,15 @@ func flags() (string, string) {
 	return socket, dbfile
 }
 
+// start the server on the provided socket. Print out where it listens
 func start(socket string) {
 	log.Printf("Starting Shortlink Server on %s\n", socket)
 	log.Fatalln(http.ListenAndServe(socket, nil))
 }
 
+// Server composes the parts needed for the Shortlink server.
+// Reads the database file and initializes Database.
+// Configures Server routes
 func Server(dbfile string) http.Handler {
 	db, err := NewDatabase(dbfile)
 	if err != nil {
@@ -96,9 +113,10 @@ func Server(dbfile string) http.Handler {
 	return router
 }
 
+// main entry point to the Shortlink application
 func main() {
-	banner()
-	socket, dbfile := flags()
-	http.Handle("/", Server(dbfile))
-	start(socket)
+	banner()                         // print banner
+	socket, dbfile := flags()        // get config
+	http.Handle("/", Server(dbfile)) // configure server
+	start(socket)                    // start server
 }
