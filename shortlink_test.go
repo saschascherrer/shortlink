@@ -13,6 +13,16 @@ func TestBanner(t *testing.T) {
 	banner()
 }
 
+func TestFlags(t *testing.T) {
+	flags()
+}
+
+func TestServer(t *testing.T) {
+	err := ioutil.WriteFile(testdbpath, []byte(filecontent), 0754)
+	assert.NoError(t, err)
+	Server(testdbpath)
+}
+
 func TestResolverFunc(t *testing.T) {
 	var rf ResolverFunc
 	rf = func(key string) string {
@@ -20,6 +30,18 @@ func TestResolverFunc(t *testing.T) {
 	}
 	val := rf.Resolve("key")
 	assert.Equal(t, "value", val)
+}
+
+func TestDatabaseResolver(t *testing.T) {
+	var db ShortlinkDB
+	db, _ = NewDatabase(testdbpath)
+	db.Add("key1", "value1")
+
+	val := DatabaseResolver(db).Resolve("key")
+	assert.Equal(t, "", val)
+
+	val = DatabaseResolver(db).Resolve("key1")
+	assert.Equal(t, "value1", val)
 }
 
 func TestRedirectorKeyNotFound(t *testing.T) {
