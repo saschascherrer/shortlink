@@ -50,8 +50,9 @@ func banner() {
 func main() {
 	banner()
 
-	var socket string
+	var socket, dbfile string
 	flag.StringVar(&socket, "socket", ":4242", "The socket to listen on")
+	flag.StringVar(&dbfile, "dbfile", "./shortlink.db", "Database File")
 	flag.Parse()
 
 	var resolver ResolverFunc
