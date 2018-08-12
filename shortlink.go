@@ -17,9 +17,15 @@ func (rf ResolverFunc) Resolve(key string) string {
 	return rf(key)
 }
 
-func Redirector() http.HandlerFunc {
+func Redirector(resolver Resolver) http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
-		fmt.Fprintf(w, "Hello, World\n")
+		target := resolver.Resolve("key")
+		if target != "" {
+			http.Redirect(w, r, target, http.StatusTemporaryRedirect)
+		} else {
+			w.WriteHeader(http.StatusNotFound)
+			fmt.Fprintln(w, http.StatusText(http.StatusNotFound))
+		}
 	}
 }
 
@@ -37,7 +43,12 @@ func main() {
 	flag.StringVar(&socket, "socket", ":4242", "The socket to listen on")
 	flag.Parse()
 
-	http.HandleFunc("/", Redirector())
+	var resolver ResolverFunc
+	resolver = func(key string) string {
+		return "resolved"
+	}
+
+	http.HandleFunc("/", Redirector(resolver))
 
 	log.Printf("Starting Shortlink Server on %s\n", socket)
 	log.Fatalln(http.ListenAndServe(socket, nil))
