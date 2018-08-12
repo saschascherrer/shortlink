@@ -5,6 +5,7 @@ import (
 	"fmt"
 	"log"
 	"net/http"
+	"strings"
 )
 
 type Resolver interface {
@@ -19,7 +20,17 @@ func (rf ResolverFunc) Resolve(key string) string {
 
 func Redirector(resolver Resolver) http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
-		target := resolver.Resolve("key")
+		var target string
+
+		// Extract Key
+		key := strings.TrimPrefix(r.URL.EscapedPath(), "/r/")
+		if key == "/" {
+			target = ""
+		} else {
+			target = resolver.Resolve(key)
+		}
+
+		// Redirect if found, error otherwise
 		if target != "" {
 			http.Redirect(w, r, target, http.StatusTemporaryRedirect)
 		} else {

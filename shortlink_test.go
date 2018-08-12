@@ -48,7 +48,7 @@ func TestRedirectorExistingTarget(t *testing.T) {
 	ts := httptest.NewServer(Redirector(resolver))
 	defer ts.Close()
 
-	res, err := http.Get(ts.URL)
+	res, err := http.Get(ts.URL + "/r/hp")
 	assert.NoError(t, err)
 	assert.Equal(t, http.StatusOK, res.StatusCode, "wrong status")
 }
@@ -68,10 +68,43 @@ func TestRedirectorNonexistingTarget(t *testing.T) {
 		},
 	}
 
-	res, err := client.Get(ts.URL)
+	res, err := client.Get(ts.URL + "/r/invalid")
 	assert.NoError(t, err)
 	assert.Equal(t, http.StatusTemporaryRedirect, res.StatusCode, "wrong status")
 	location, err := res.Location()
 	assert.NoError(t, err)
 	assert.Equal(t, "http://example.invalid", location.String())
+}
+
+func TestRedirectorKeyExtraction(t *testing.T) {
+	var gotkey string
+	var resolver ResolverFunc
+	resolver = func(key string) string {
+		gotkey = key
+		return "http://example.invalid"
+	}
+
+	ts := httptest.NewServer(Redirector(resolver))
+	defer ts.Close()
+
+	client := &http.Client{
+		CheckRedirect: func(req *http.Request, via []*http.Request) error {
+			return http.ErrUseLastResponse
+		},
+	}
+
+	var err error
+
+	_, err = client.Get(ts.URL + "/")
+	assert.NoError(t, err)
+	assert.Equal(t, "", gotkey)
+
+	_, err = client.Get(ts.URL + "/r/")
+	assert.NoError(t, err)
+	assert.Equal(t, "", gotkey)
+
+	_, err = client.Get(ts.URL + "/r/hp")
+	assert.NoError(t, err)
+	assert.Equal(t, "hp", gotkey)
+
 }
