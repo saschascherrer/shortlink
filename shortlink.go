@@ -8,34 +8,49 @@ import (
 )
 
 type Resolver interface {
-	Resolve(key string) string
+	Resolve(key string) (string, error)
 }
 
-type ResolverFunc func(key string) string
+type ResolverFunc func(key string) (string, error)
 
-func (rf ResolverFunc) Resolve(key string) string {
+func (rf ResolverFunc) Resolve(key string) (string, error) {
 	return rf(key)
 }
 
-func Redirector() func(w http.ResponseWriter, r *http.Request) {
+func Redirector(resolver Resolver) http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
-		responseString := "<html><body>Hello World</body></html>"
-		w.Write([]byte(responseString))
+		key := r.URL.Path
+		target, err := resolver.Resolve(key)
+		if err == nil {
+			http.Redirect(w, r, target, http.StatusTemporaryRedirect)
+		}
+		w.WriteHeader(http.StatusNotFound)
+		fmt.Fprintf(w, "Entry for '%s' not found. Error Message: %s", key, err.Error())
 	}
 }
 
-func main() {
+type LocalResolver struct{}
+
+func (r LocalResolver) Resolve(key string) (string, error) {
+	return "localhost:4242/#resolved=" + key, nil
+}
+
+func banner() {
 	fmt.Println("+--------------------------------------------+")
 	fmt.Println("| Shortlink v0.1.0 (alpha)         GNU GPLv3 |")
 	fmt.Println("| by Sascha Scherrer <dev@saschascherrer.de> |")
 	fmt.Println("+--------------------------------------------+")
+}
+
+func main() {
+	banner()
 
 	var socket string
 	flag.StringVar(&socket, "socket", ":4242", "The socket to listen on")
 	flag.Parse()
 
-	log.Printf("Starting Shortlink Server on %s\n", socket)
+	http.HandleFunc("/", Redirector(LocalResolver{}))
 
-	http.HandleFunc("/", Redirector())
+	log.Printf("Starting Shortlink Server on %s\n", socket)
 	log.Fatalln(http.ListenAndServe(socket, nil))
 }
