@@ -114,7 +114,7 @@ func TestSaveEmptyFilename(t *testing.T) {
 	}
 }
 
-func TestSave(t *testing.T) {
+func TestSaveOK(t *testing.T) {
 	db, err := NewDatabase(testdbpath)
 	assert.NoError(t, err)
 	db.Add("key1", "value1")
@@ -136,7 +136,31 @@ func TestSave(t *testing.T) {
 	}
 }
 
-func TestLoad(t *testing.T) {
+func TestLoadEmptyFilename(t *testing.T) {
+	err := ioutil.WriteFile(testdbpath, []byte(filecontent), 0754)
+	assert.NoError(t, err)
+
+	db := Database{filename: ""}
+	assert.Equal(t, "", db.filename)
+
+	err = db.Load("")
+	assert.EqualError(t, err, "Empty Filename")
+
+	db = Database{filename: testdbpath}
+	assert.Equal(t, testdbpath, db.filename)
+
+	err = db.Load("")
+	assert.NoError(t, err)
+
+	if _, err := os.Stat(testdbpath); err == nil {
+		err := os.Remove(testdbpath)
+		assert.NoError(t, err)
+	} else {
+		t.Error("File not written")
+	}
+}
+
+func TestLoadOK(t *testing.T) {
 	err := ioutil.WriteFile(testdbpath, []byte(filecontent), 0754)
 	assert.NoError(t, err)
 
