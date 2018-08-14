@@ -48,7 +48,7 @@ func Server(dbfile string) http.Handler {
 	router.HandleFunc("/r/", Redirector(DatabaseResolver(db), HTTPRedirect{})) // redirect from short-URL
 	router.HandleFunc("/s/", Redirector(DatabaseResolver(db), HTTPPrint{}))    // show target of short-URL
 	router.HandleFunc("/list/", http.NotFound)                                 // show all short-URLs and their target
-	router.HandleFunc("/manage/", http.NotFound)                               // show all short-URLs and their target
+	router.Handle("/manage/", DatabaseAPI(db))                                 // manage short-URLs and their target (API)
 	router.Handle("/static/",
 		http.StripPrefix("/static/",
 			http.FileServer(http.Dir("./static"))))
