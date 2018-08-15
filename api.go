@@ -2,6 +2,7 @@ package main
 
 import (
 	"encoding/json"
+	"html/template"
 	"io/ioutil"
 	"net/http"
 )
@@ -9,6 +10,12 @@ import (
 type PostData struct {
 	Key    string
 	Target string
+}
+
+type ManagePageData struct {
+	PageTitle string
+	Key       string
+	Target    string
 }
 
 func DatabaseAPI(db ShortlinkDB) http.Handler {
@@ -35,6 +42,14 @@ func DatabaseAPI(db ShortlinkDB) http.Handler {
 				w.WriteHeader(http.StatusCreated)
 			}
 
+		} else if r.Method == http.MethodGet {
+			tpl := template.Must(template.ParseFiles("./templates/manage.tpl"))
+			data := ManagePageData{
+				PageTitle: "Manage",
+				Key:       "",
+				Target:    "",
+			}
+			tpl.Execute(w, data)
 		} else {
 			http.Error(w, http.StatusText(http.StatusMethodNotAllowed), http.StatusMethodNotAllowed)
 		}

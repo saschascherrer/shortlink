@@ -17,20 +17,16 @@ func TestDatabaseAPI(t *testing.T) {
 	ts := httptest.NewServer(DatabaseAPI(db))
 	defer ts.Close()
 
-	// Wrong method
+	// Get method
 	res, err := http.Get(ts.URL + "/manage/")
 	assert.NoError(t, err)
-	assert.Equal(t, http.StatusMethodNotAllowed, res.StatusCode)
-	body, err := ioutil.ReadAll(res.Body)
-	assert.NoError(t, err)
-	assert.Equal(t, []byte(http.StatusText(http.StatusMethodNotAllowed)+"\n"), body)
-	assert.Equal(t, 0, len(db.entries))
+	assert.Equal(t, http.StatusOK, res.StatusCode)
 
 	// Empty body
 	res, err = http.Post(ts.URL+"/manage/", "text/json", bytes.NewBuffer([]byte("")))
 	assert.NoError(t, err)
 	assert.Equal(t, http.StatusUnprocessableEntity, res.StatusCode)
-	body, err = ioutil.ReadAll(res.Body)
+	body, err := ioutil.ReadAll(res.Body)
 	assert.NoError(t, err)
 	assert.Equal(t, []byte(http.StatusText(http.StatusUnprocessableEntity)+"\n"), body)
 	assert.Equal(t, 0, len(db.entries))
